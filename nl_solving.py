@@ -36,7 +36,7 @@ def solving_fol(inputs):
     standerize_ans = {"true":"Yes", "false":"No", "No concluse": "No"}
     int_to_choice = ["A", "B", "C", "D"]
     res = {
-        "answers":[],
+        "answer":[],
         "idx":[],
         "explanation": []
     }
@@ -57,11 +57,11 @@ def solving_fol(inputs):
                     else:
                         noConcluseChoice.append((int_to_choice[choice_idx], idx, proof))
                 if len(trueChoice)==1:
-                    res["answers"].append(trueChoice[0][0])
+                    res["answer"].append(trueChoice[0][0])
                     res["idx"].append(trueChoice[0][1])
                     res["explanation"].append(trueChoice[0][2])
                 elif len(falseChoice)==3 and len(noConcluseChoice)==1:
-                    res["answers"].append(noConcluseChoice[0][0])
+                    res["answer"].append(noConcluseChoice[0][0])
                     res["idx"].append(noConcluseChoice[0][1])
                     res["explanation"].append(noConcluseChoice[0][2])
                 else:
@@ -72,20 +72,21 @@ def solving_fol(inputs):
                     doesError = True
                     idx = list(range(1,len(premises_nl)+1))
                 else:
-                    res["answers"].append(standerize_ans[ans])
+                    res["answer"].append(standerize_ans[ans])
                     res["idx"].append(idx)
                     res["explanation"].append(proof)
         except Exception as error:
             print("ERROR!!!!!!", error)
             doesError = True
         if doesError:
-            response = solve_fol_problem_fullLM(premises_nl, question)
+            response = solve_fol_problem_fullLM(premises_nl, question) # took long
             print('response:', response)
-            res["answers"].append(response["answers"][0])
+            res["answer"].append(response["answers"][0])
             res["idx"].append(response["idx"][0])
             res["explanation"].append(response["explanation"][0])
 
     for ans in res["idx"]:
+        print('ans:', ans)
         ans.sort()
     for i in range(len(res["explanation"])):
         x = res["explanation"][i]
@@ -96,23 +97,42 @@ def solving_fol(inputs):
 
 
 if __name__ == "__main__":
-    premises_nl = [
-		"Students who have completed the core curriculum and passed the science assessment are qualified for advanced courses.",
-		"Students who are qualified for advanced courses and have completed research methodology are eligible for the international program.",
-		"Students who have passed the language proficiency exam are eligible for the international program.",
-		"Students who are eligible for the international program and have completed a capstone project are awarded an honors diploma.",
-		"Students who have been awarded an honors diploma and have completed community service qualify for the university scholarship.",
-		"Students who have been awarded an honors diploma and have received a faculty recommendation qualify for the university scholarship.",
-		"Sophia has completed the core curriculum.",
-		"Sophia has passed the science assessment.",
-		"Sophia has completed the research methodology course.",
-		"Sophia has completed her capstone project.",
-		"Sophia has completed the required community service hours."
-    ]
-    questions = ["Does Sophia qualify for the university scholarship, according to the premises?"]
-    inputs = {"premises-NL":premises_nl,"questions":questions}
-    print(inputs)
+    # premises_nl = [
+	# 	"Students who have completed the core curriculum and passed the science assessment are qualified for advanced courses.",
+	# 	"Students who are qualified for advanced courses and have completed research methodology are eligible for the international program.",
+	# 	"Students who have passed the language proficiency exam are eligible for the international program.",
+	# 	"Students who are eligible for the international program and have completed a capstone project are awarded an honors diploma.",
+	# 	"Students who have been awarded an honors diploma and have completed community service qualify for the university scholarship.",
+	# 	"Students who have been awarded an honors diploma and have received a faculty recommendation qualify for the university scholarship.",
+	# 	"Sophia has completed the core curriculum.",
+	# 	"Sophia has passed the science assessment.",
+	# 	"Sophia has completed the research methodology course.",
+	# 	"Sophia has completed her capstone project.",
+	# 	"Sophia has completed the required community service hours."
+    # ]
+    # questions = ["Does Sophia qualify for the university scholarship, according to the premises?"]
+    # inputs = {"premises-NL":premises_nl,"questions":questions}
+    # print(inputs)
+
+    inputs = {
+        "premises-NL": [
+            "Thesis eligibility requires ≥ 100 credits, GPA ≥ 5.5 (scale 0–10), capstone completion, and ≥ 80 capstone hours.",
+            "Capstone completion requires ≥ 80 credits and a 5-credit capstone course (grade ≥ 4.0).",
+            "Failed courses (grade < 4.0) add 0 credits, 0 capstone hours.",
+            "Improvement retakes (grade ≥ 4.0) use highest grade, no extra credits/hours.",
+            "Each course (grade ≥ 4.0) adds capstone hours: 3 credits = 6 hours, 4 credits = 8 hours, 5 credits = 10 hours.",
+            "Final-year students (Year 4) with capstone but < 80 hours can join capstone workshops (15 hours), if GPA ≥ 5.0.",
+            "A student (Year 3) has a GPA of 5.8, 85 credits, 100 capstone hours, no capstone course, including C1 (3 credits, 6.0, 6 hours), C2 (4 credits, 5.5, 8 hours).",
+            "The student took capstone course C3 (5 credits, 4.5), retook C1 (6.5), took C4 (3 credits, 3.8, failed), joined 2 workshops."
+        ],
+        "questions": [
+            "What is the student’s updated GPA after all course attempts?",
+            "How many capstone hours has the student accumulated, and are they eligible for the thesis?"
+        ]
+    }
+
     result = solving_fol(inputs)
+    print('RESULT:', result)
 
     # result = solve_fol_problem_fullLM(example_input["premises-NL"], example_input["questions"][0])
     # result = solve_fol_problem_(example_input)

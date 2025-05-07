@@ -172,10 +172,9 @@ Output:
             except Exception as e:
                 print(f"Error: {e}")
                 retries -= 1
-                time.sleep(2)
                 if (retries==0):
                     outputs["answers"].append("Yes")
-                    outputs["idx"].append("[]")
+                    outputs["idx"].append([])
                     outputs["explanation"].append("")
 
     return outputs

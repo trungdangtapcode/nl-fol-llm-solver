@@ -1,7 +1,7 @@
 from typing import Union
 
 from fastapi import FastAPI, HTTPException, Header
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 
 from dotenv import dotenv_values
@@ -14,15 +14,15 @@ API_AUTH_TOKEN = config["API_AUTH_TOKEN"]
 
 
 class QueryRequest(BaseModel):
-    premises: List[str]
+    premises: List[str] = Field(..., alias="premises-NL")
     questions: List[str]
 
 class QueryResponseItem(BaseModel):
-    answer: str
-    idx: List[int]
+    answer: List[str]
+    idx: List[List[int]]
     explanation: List[str]
 
-@app.post("/query", response_model=List[QueryResponseItem])
+@app.post("/query", response_model=QueryResponseItem)
 async def query(request: QueryRequest, authorization: Optional[str] = Header(None)):
     if API_AUTH_TOKEN!="-1" and authorization != f"Bearer {API_AUTH_TOKEN}":
         raise HTTPException(status_code=401, detail="Unauthorized. Invalid or missing token.")
