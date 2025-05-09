@@ -45,8 +45,11 @@ def solving_fol_single_question(premises_nl, question, start_time, reOrder = Tru
 def solving_fol(inputs, start_time):
     premises_nl = inputs["premises-NL"]
     questions = inputs["questions"]
+    print("QUESTION:", questions)
+
     standerize_ans = {"true":"Yes", "false":"No", "No concluse": "No"}
     int_to_choice = ["A", "B", "C", "D"]
+
     res = {
         "answers":[],
         "idx":[],
@@ -105,7 +108,8 @@ def solving_fol(inputs, start_time):
         x = res["explanation"][i]
         if isinstance(x, list):
             res["explanation"][i] = " ".join(x)
-        
+    
+    print('return res:', res)
     return res
 
 
