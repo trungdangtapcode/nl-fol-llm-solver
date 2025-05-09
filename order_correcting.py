@@ -86,7 +86,7 @@ def permute_list(lst_b, pairs):
         result[src] = lst_b[dest]
     return result
 
-def permute_fol(nl_premises, fol_premises):
+def permute_fol(nl_premises, fol_premises, start_time):
     matches = match_fol_nl(nl_premises, fol_premises)
     fol_premises = permute_list(fol_premises, matches)
     return fol_premises

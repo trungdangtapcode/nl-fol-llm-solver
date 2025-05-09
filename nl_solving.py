@@ -1,10 +1,12 @@
 import re
 import json
 from nl_to_fol import nl_to_fol
+from openai_clients import step_change_client
 from order_correcting import permute_fol
 from bracket_correcting import fix_nested_fol_brackets
 from z3_solve import solve_fol
 from simple_solve import solve_fol_problem_fullLM
+from timeout import *
 
 def extract_choices(text):
     # Find all options starting with A., B., C., D.
@@ -15,14 +17,24 @@ def extract_choices(text):
         return None
 
 
-def solving_fol_single_question(premises_nl, question, reOrder = True):
-    fol_formulas = nl_to_fol(premises_nl, question)
+cache = {}
+
+def solving_fol_single_question(premises_nl, question, start_time, reOrder = True, fixBracket = False):
+    if (is_timeout(start_time)): 
+        return TIMEOUT_RETURN
+    fol_formulas = nl_to_fol(premises_nl, question, start_time)
+    step_change_client()
     # print('fol_formulas:',fol_formulas)
     premises_fol = fol_formulas["premise"]
-    if (reOrder):
-        premises_fol = permute_fol(premises_nl, premises_fol)
+    if (reOrder and not is_timeout(start_time)):
+        premises_fol = permute_fol(premises_nl, premises_fol, start_time)
+        step_change_client()
     conclusion = fol_formulas["question"]
-    conclusions = fix_nested_fol_brackets([conclusion])
+    if (fixBracket and not is_timeout(start_time)):
+        conclusions = fix_nested_fol_brackets([conclusion], start_time)
+        step_change_client()
+    else:
+        conclusions = [conclusion]
     # print('conclusion:',conclusion)
     ans, idx, proof = solve_fol(premises_fol, conclusions)
     # print(ans, idx, proof)
@@ -30,13 +42,13 @@ def solving_fol_single_question(premises_nl, question, reOrder = True):
     if (len(proof)>500): proof = proof[:500]
     return ans, idx, proof
 
-def solving_fol(inputs):
+def solving_fol(inputs, start_time):
     premises_nl = inputs["premises-NL"]
     questions = inputs["questions"]
     standerize_ans = {"true":"Yes", "false":"No", "No concluse": "No"}
     int_to_choice = ["A", "B", "C", "D"]
     res = {
-        "answer":[],
+        "answers":[],
         "idx":[],
         "explanation": []
     }
@@ -49,7 +61,7 @@ def solving_fol(inputs):
             noConcluseChoice = []
             if choices is not None:
                 for choice_idx, choice in enumerate(choices):
-                    ans, idx, proof = solving_fol_single_question(premises_nl, question)
+                    ans, idx, proof = solving_fol_single_question(premises_nl, question, start_time, start_time)
                     if ans=='true':
                         trueChoice.append((int_to_choice[choice_idx], idx, proof))
                     elif ans=='false':
@@ -57,31 +69,32 @@ def solving_fol(inputs):
                     else:
                         noConcluseChoice.append((int_to_choice[choice_idx], idx, proof))
                 if len(trueChoice)==1:
-                    res["answer"].append(trueChoice[0][0])
+                    res["answers"].append(trueChoice[0][0])
                     res["idx"].append(trueChoice[0][1])
                     res["explanation"].append(trueChoice[0][2])
                 elif len(falseChoice)==3 and len(noConcluseChoice)==1:
-                    res["answer"].append(noConcluseChoice[0][0])
+                    res["answers"].append(noConcluseChoice[0][0])
                     res["idx"].append(noConcluseChoice[0][1])
                     res["explanation"].append(noConcluseChoice[0][2])
                 else:
                     doesError = True
             else:
-                ans, idx, proof = solving_fol_single_question(premises_nl, question)
+                ans, idx, proof = solving_fol_single_question(premises_nl, question, start_time)
                 if len(idx)==0:
                     doesError = True
                     idx = list(range(1,len(premises_nl)+1))
                 else:
-                    res["answer"].append(standerize_ans[ans])
+                    res["answers"].append(standerize_ans[ans])
                     res["idx"].append(idx)
                     res["explanation"].append(proof)
         except Exception as error:
             print("ERROR!!!!!!", error)
             doesError = True
         if doesError:
-            response = solve_fol_problem_fullLM(premises_nl, question) # took long
+            response = solve_fol_problem_fullLM(premises_nl, question, start_time) # took long
+            step_change_client()
             print('response:', response)
-            res["answer"].append(response["answers"][0])
+            res["answers"].append(response["answers"][0])
             res["idx"].append(response["idx"][0])
             res["explanation"].append(response["explanation"][0])
 
@@ -134,6 +147,6 @@ if __name__ == "__main__":
     result = solving_fol(inputs)
     print('RESULT:', result)
 
-    # result = solve_fol_problem_fullLM(example_input["premises-NL"], example_input["questions"][0])
+    # result = solve_fol_problem_fullLM(example_input["premises-NL"], example_input["questions"][0], 0)
     # result = solve_fol_problem_(example_input)
     # print(json.dumps(result, indent=4))

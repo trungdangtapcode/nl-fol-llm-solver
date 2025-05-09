@@ -18,7 +18,7 @@ def is_bracket_correct(statement):
             stack.pop()
     return len(stack) == 0
 
-def fix_nested_fol_brackets(fol_statements):
+def fix_nested_fol_brackets(fol_statements, start_time):
     """
     Fix only incorrect bracket nesting in a list of FOL statements using OpenAI API.
     Args:

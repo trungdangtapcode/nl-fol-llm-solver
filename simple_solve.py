@@ -3,6 +3,7 @@ import json
 import json
 import re
 from openai_clients import *
+from timeout import *
 
 def to_json(content):
     s = content.strip()
@@ -15,15 +16,15 @@ def to_json(content):
     # print('final string:',s)
     return json.loads(s)
 
-def solve_fol_problem_fullLM(premises_nl, question):
+def solve_fol_problem_fullLM(premises_nl, question, start_time):
     body = {
         "premises-NL": premises_nl,
         "questions": [question]
     }
-    response = solve_fol_problem_(body)
+    response = solve_fol_problem_(body, start_time)
     return response 
 
-def solve_fol_problem_(input_data, model=model_name, temperature=0.0):
+def solve_fol_problem_(input_data, start_time, model=model_name, temperature=0.0):
     """
     Solve FOL natural language problems with advanced reasoning.
     """
@@ -117,7 +118,7 @@ Output:
 
 """
 
-    def build_prompt(premises, question):
+    def build_prompt(premises, question, start_time):
         formatted_premises = "\n".join([f"{i+1}. {p}" for i, p in enumerate(premises)])
         prompt = (
             f"{system_prompt}\n\n"
@@ -144,7 +145,7 @@ Output:
     }
 
     for question in questions:
-        prompt = build_prompt(premises, question)
+        prompt = build_prompt(premises, question, start_time)
 
         retries = 1
         while retries > 0:
@@ -157,7 +158,8 @@ Output:
                         {"role": "system", "content": system_prompt + "\n\n" + examples},
                         {"role": "user", "content": prompt}
                     ],
-                    temperature=temperature
+                    temperature=temperature,
+                    timeout=remaining_time(start_time),
                 )
                 content = response.choices[0].message.content
                 # print("```",content,"```")
@@ -203,6 +205,6 @@ if __name__ == "__main__":
     }
     
 
-    # result = solve_fol_problem_fullLM(example_input["premises-NL"], example_input["questions"][0])
+    # result = solve_fol_problem_fullLM(example_input["premises-NL"], example_input["questions"][0], 0)
     result = solve_fol_problem_(example_input)
     print(json.dumps(result, indent=4))

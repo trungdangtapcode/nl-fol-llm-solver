@@ -1,7 +1,7 @@
 import re
 from openai_clients import *
 import json
-import time
+from timeout import *
 
 def format_output(text):
     # match = re.search(r'"premise"^,}]*', text)
@@ -14,7 +14,7 @@ def format_output(text):
     else:
         raise ValueError(f"Format wrong!")
 
-def nl_to_fol(premises, question):
+def nl_to_fol(premises, question, start_time):
     # Construct a consistent and instructive prompt
     system_message = (
         "You are a world-class expert in Formal Logic and AI prompt engineering. "

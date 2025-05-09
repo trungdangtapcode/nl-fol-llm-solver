@@ -8,17 +8,19 @@ from dotenv import dotenv_values
 
 from nl_solving import solving_fol
 
+from timeout import *
+
 config = dotenv_values(".env")
 app = FastAPI()
 API_AUTH_TOKEN = config["API_AUTH_TOKEN"]
-
+TIMEOUT_LIMIT = config["TIMEOUT_LIMIT"]
 
 class QueryRequest(BaseModel):
     premises: List[str] = Field(..., alias="premises-NL")
     questions: List[str]
 
 class QueryResponseItem(BaseModel):
-    answer: List[str]
+    answers: List[str]
     idx: List[List[int]]
     explanation: List[str]
 
@@ -27,12 +29,14 @@ async def query(request: QueryRequest, authorization: Optional[str] = Header(Non
     if API_AUTH_TOKEN!="-1" and authorization != f"Bearer {API_AUTH_TOKEN}":
         raise HTTPException(status_code=401, detail="Unauthorized. Invalid or missing token.")
 
+    start_time = get_current_time()
+
     try:
         inputs = {
 			"premises-NL": request.premises,
 			"questions": request.questions
 		}
-        result = solving_fol(inputs)
+        result = solving_fol(inputs, start_time)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
