@@ -2,3 +2,4 @@ z3-solver
 openai
 fastapi[standard]
 python-dotenv
+requests

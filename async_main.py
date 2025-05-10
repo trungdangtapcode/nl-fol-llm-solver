@@ -6,16 +6,16 @@ from typing import List, Optional
 
 from dotenv import dotenv_values
 
-from nl_solving import solving_fol
-
 from timeout import *
+import random
 
 import asyncio
 
 config = dotenv_values(".env")
 app = FastAPI()
 API_AUTH_TOKEN = config["API_AUTH_TOKEN"]
-TIMEOUT_LIMIT = config["TIMEOUT_LIMIT"]
+TIMEOUT_LIMIT = float(config["TIMEOUT_LIMIT"])
+RANDOM_REQUESTS_SLEEP = float(config["RANDOM_REQUESTS_SLEEP"])
 
 class QueryRequest(BaseModel):
     premises: List[str] = Field(..., alias="premises-NL")
@@ -27,6 +27,48 @@ class QueryResponseItem(BaseModel):
     explanation: List[str]
 
 
+import requests
+import json
+
+current_url = ""
+current_url_idx = -1
+nodes = []
+def init_nodes():
+    global nodes, current_url, current_url_idx
+
+    with open('nodes.json', 'r') as f:
+        nodes = json.load(f)   
+
+    assert len(nodes) > 0, "No nodes found in nodes.json"
+
+    current_url_idx = 0
+    current_url = nodes[current_url_idx]["url"]
+
+init_nodes()
+
+def step_change_node():
+	global nodes, current_url, current_url_idx
+	n = len(nodes)
+	current_url_idx = (current_url_idx+1)%n
+	current_url = nodes[current_url_idx]["url"]
+	print("Current URL:", current_url)
+
+def solving_fol(input_problem, time_start):
+    time.sleep(random.uniform(0, RANDOM_REQUESTS_SLEEP))
+    global current_url
+    print('solving_fol (async current question):', input_problem['questions'])
+    # print("Current URL:", current_url)
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    data = json.dumps(input_problem)
+    step_change_node()
+    response = requests.post(current_url, headers=headers, data=data, timeout=TIMEOUT_LIMIT)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        raise Exception(f"Error: {response.status_code}, {response.text}")
+    
 async def main_solving(inputs, start_time):
     premises_nl = inputs["premises-NL"]
     questions = inputs["questions"]
@@ -61,38 +103,6 @@ async def main_solving(inputs, start_time):
     return responses
 
 
-
-#===================================================================
-def func(arg):
-    print('start')
-    try:
-        arg //= 0
-        raise ValueError("ZeroDivisionError")
-    except Exception as e:
-        arg = -arg
-        pass
-
-    import time
-    time.sleep(1)
-
-    return arg
-
-async def test():
-    tasks = []
-    loop = asyncio.get_event_loop()
-    for i in range(1, 20):
-        # Run synchronous func in executor since it's not a coroutine
-        task = loop.run_in_executor(None, func, i)
-        tasks.append(task)
-    res = await asyncio.gather(*tasks)
-    return res
-
-@app.post("/test")
-async def atest():
-    res = await test()
-    return res
-#===================================================================
-
 @app.post("/query", response_model=QueryResponseItem)
 async def query(request: QueryRequest, authorization: Optional[str] = Header(None)):
     if API_AUTH_TOKEN!="-1" and authorization != f"Bearer {API_AUTH_TOKEN}":
@@ -116,11 +126,10 @@ async def query(request: QueryRequest, authorization: Optional[str] = Header(Non
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
 
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
+if __name__ == "__main__":
+    init_nodes()

@@ -1,0 +1,122 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+        {
+            "label": "Stop Uvicorn Servers",
+            "type": "shell",
+            "command": "pkill -f 'uvicorn main:app --host 0.0.0.0 --port 8[1-8]'",
+            "presentation": {
+            "reveal": "always",
+            "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Uvicorn Servers",
+            "type": "shell",
+            "command": "echo Starting Uvicorn servers",
+            "dependsOn": [
+            "uvicorn-81",
+            "uvicorn-82",
+            "uvicorn-83",
+            "uvicorn-84",
+            "uvicorn-85",
+            "uvicorn-86",
+            "uvicorn-87",
+            "uvicorn-88"
+            ],
+            "group": {
+            "kind": "build",
+            "isDefault": true
+            }
+        },
+        {
+            "label": "uvicorn-81",
+            "type": "shell",
+            "command": "uvicorn main:app --host 0.0.0.0 --port 81 --reload",
+            "presentation": {
+            "reveal": "always",
+            "panel": "new",
+            "group": "group1"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "uvicorn-82",
+            "type": "shell",
+            "command": "uvicorn main:app --host 0.0.0.0 --port 82 --reload",
+            "presentation": {
+            "reveal": "always",
+            "panel": "new",
+            "group": "group1"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "uvicorn-83",
+            "type": "shell",
+            "command": "uvicorn main:app --host 0.0.0.0 --port 83 --reload",
+            "presentation": {
+            "reveal": "always",
+            "panel": "new",
+            "group": "group1"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "uvicorn-84",
+            "type": "shell",
+            "command": "uvicorn main:app --host 0.0.0.0 --port 84 --reload",
+            "presentation": {
+            "reveal": "always",
+            "panel": "new",
+            "group": "group1"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "uvicorn-85",
+            "type": "shell",
+            "command": "uvicorn main:app --host 0.0.0.0 --port 85 --reload",
+            "presentation": {
+            "reveal": "always",
+            "panel": "new",
+            "group": "group2"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "uvicorn-86",
+            "type": "shell",
+            "command": "uvicorn main:app --host 0.0.0.0 --port 86 --reload",
+            "presentation": {
+            "reveal": "always",
+            "panel": "new",
+            "group": "group2"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "uvicorn-87",
+            "type": "shell",
+            "command": "uvicorn main:app --host 0.0.0.0 --port 87 --reload",
+            "presentation": {
+            "reveal": "always",
+            "panel": "new",
+            "group": "group2"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "uvicorn-88",
+            "type": "shell",
+            "command": "uvicorn main:app --host 0.0.0.0 --port 88 --reload",
+            "presentation": {
+            "reveal": "always",
+            "panel": "new",
+            "group": "group2"
+            },
+            "problemMatcher": []
+        }
+	]
+  }
