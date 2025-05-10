@@ -69,6 +69,19 @@ uvicorn async_main:app --host 0.0.0.0 --port 80 --reload
 ```
 
 ## VS Code Integration
+### Set `nodes.json`
+```json
+[
+  {"url": "http://127.0.0.1:81/query"},
+  {"url": "http://127.0.0.1:82/query"},
+  {"url": "http://127.0.0.1:83/query"},
+  {"url": "http://127.0.0.1:84/query"},
+  {"url": "http://127.0.0.1:85/query"},
+  {"url": "http://127.0.0.1:86/query"},
+  {"url": "http://127.0.0.1:87/query"},
+  {"url": "http://127.0.0.1:88/query"}
+]
+```
 
 ### Running Servers
 1. Open Terminal in VS Code

@@ -2,14 +2,18 @@
 	"version": "2.0.0",
 	"tasks": [
         {
-            "label": "Stop Uvicorn Servers",
+            "label": "Stop uvicorn server",
             "type": "shell",
-            "command": "pkill -f 'uvicorn main:app --host 0.0.0.0 --port 8[1-8]'",
+            // "command": "pkill -f 'uvicorn main:app --host 0.0.0.0 --port 8[1-8]'",
+            // "windows": {
+            //     "command": "for %p in (81 82 83 84 85 86 87 88) do (for /f \"tokens=5\" %i in ('netstat -aon ^| findstr :%p') do taskkill /F /PID %i)"
+            // },
+            "command": "taskkill /IM python.exe /F",
+            "problemMatcher": [],
             "presentation": {
             "reveal": "always",
             "panel": "shared"
-            },
-            "problemMatcher": []
+            }
         },
         {
             "label": "Run Uvicorn Servers",
@@ -23,7 +27,11 @@
             "uvicorn-85",
             "uvicorn-86",
             "uvicorn-87",
-            "uvicorn-88"
+            "uvicorn-88",
+            "uvicorn-89",
+            "uvicorn-90",
+            "uvicorn-91",
+            "uvicorn-92",
             ],
             "group": {
             "kind": "build",
@@ -115,6 +123,50 @@
             "reveal": "always",
             "panel": "new",
             "group": "group2"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "uvicorn-89",
+            "type": "shell",
+            "command": "uvicorn main:app --host 0.0.0.0 --port 89 --reload",
+            "presentation": {
+            "reveal": "always",
+            "panel": "new",
+            "group": "group3"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "uvicorn-90",
+            "type": "shell",
+            "command": "uvicorn main:app --host 0.0.0.0 --port 90 --reload",
+            "presentation": {
+            "reveal": "always",
+            "panel": "new",
+            "group": "group3"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "uvicorn-91",
+            "type": "shell",
+            "command": "uvicorn main:app --host 0.0.0.0 --port 91 --reload",
+            "presentation": {
+            "reveal": "always",
+            "panel": "new",
+            "group": "group3"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "uvicorn-92",
+            "type": "shell",
+            "command": "uvicorn main:app --host 0.0.0.0 --port 92 --reload",
+            "presentation": {
+            "reveal": "always",
+            "panel": "new",
+            "group": "group3"
             },
             "problemMatcher": []
         }
