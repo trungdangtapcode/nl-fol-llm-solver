@@ -1,0 +1,194 @@
+\documentclass[11pt]{article}
+\usepackage[paperwidth=10in, paperheight=14in, margin=0in]{geometry}
+
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\usepackage{hyperref}
+
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+\usepackage{parskip}
+% Configuring font package last
+\usepackage{noto}
+
+
+\geometry{margin=1in}
+\title{Solving Natural Language logical questions with LLM and Z3 solver}
+\author{cantayxaolong}
+\date{}
+
+\begin{document}
+\maketitle
+\footnotesize
+
+\section{FOL Conversion and Solving}
+% Converting NL premises to FOL
+The \texttt{solving\_fol\_single\_question} function converts NL premises and questions into FOL formulas using \texttt{nl\_to\_fol}. Premises are optionally reordered (\texttt{permute\_fol}) to optimize inference, and nested brackets in conclusions are corrected (\texttt{fix\_nested\_fol\_brackets}) if enabled. The \texttt{solve\_fol} function evaluates conclusions against premises, returning an answer (``true'', ``false'', or ``No concluse''), premise indices, and a proof string (truncated to 500 characters).
+
+% Handling multiple-choice and single questions
+For multiple-choice questions, \texttt{extract\_choices} retrieves options, and each is evaluated to identify true, false, or inconclusive outcomes. Single questions standardize answers (e.g., ``true'' to ``Yes'').
+
+\begin{itemize}
+\item 
+\textbf{FOL Conversion and Solving}
+% Converting NL to FOL
+The \texttt{solving\_fol\_single\_question} function converts NL premises and questions into FOL formulas using \texttt{nl\_to\_fol}, powered by Qwen2.5-Coder-7B. The LLM leverages prompt engineering and few-shot learning to generate precise FOL representations. The \texttt{solve\_fol} function evaluates conclusions against premises, returning an answer (``true'', ``false'', or ``No concluse''), premise indices, and a proof string (truncated to 500 characters).
+
+% Handling multiple-choice and single questions
+For multiple-choice questions, \texttt{extract\_choices} retrieves options, and each is evaluated to classify outcomes. Single questions standardize answers (e.g., ``true'' to ``Yes'').
+\item 
+\textbf{LLM-Based Premise Reordering}
+% Reordering premises with LLM
+The \texttt{permute\_fol} function uses Qwen2.5-Coder-7B to reorder FOL premises for optimal logical inference. Given NL premises and their initial FOL forms, the LLM analyzes logical dependencies and suggests an order that minimizes inference complexity. Prompt engineering guides the LLM to prioritize premises with foundational predicates, while few-shot examples demonstrate effective reordering patterns. This step is optional and skipped if timeouts occur.
+\item 
+\textbf{LLM-Based Bracket Fixing}
+% Fixing FOL bracket syntax
+The \texttt{fix\_nested\_fol\_brackets} function employs Qwen2.5-Coder-7B to correct nested bracket errors in FOL conclusions. The LLM parses FOL formulas, identifies unbalanced or misplaced brackets, and generates syntactically correct versions. Few-shot learning provides examples of valid FOL bracket structures, and prompts ensure adherence to logical syntax rules. This step is optional and controlled by the \texttt{fixBracket} parameter.
+\item 
+\textbf{LLM-Based Fallback}
+% Falling back to LLM solving
+When FOL solving fails (e.g., due to parsing errors or timeouts), \texttt{solve\_fol\_problem\_fullLM} employs an LLM with prompt engineering and few-shot learning. Structured prompts guide the LLM to parse NL inputs or generate answers directly, while few-shot examples enhance reasoning accuracy. The LLM returns answers, indices, and explanations.
+\item 
+\textbf{Asynchronous Handling with FastAPI}
+% Distributing tasks across servers
+The system uses a main FastAPI server to receive requests and distribute tasks to multiple sub-servers via asynchronous \texttt{asyncio} calls. Each sub-server processes a subset of premises or questions, enabling parallel execution. The main server aggregates results, ensuring scalability for large datasets. The \texttt{step\_change\_client} function manages server coordination, balancing load across sub-servers.
+\item 
+\textbf{Timeout Handling}
+% Managing computational limits
+Timeouts are enforced using a \texttt{start\_time} parameter and \texttt{is\_timeout} checks. If a task exceeds the time limit, \texttt{solving\_fol\_single\_question} returns a \texttt{TIMEOUT\_RETURN} value, triggering the LLM fallback. Asynchronous tasks are monitored to prevent server overload, with timeouts ensuring no single task monopolizes resources.
+\end{itemize}
+
+\section{Implementation Details}
+% Outlining key implementation features
+The system incorporates:
+\begin{itemize}
+    \item \textbf{Prompt Engineering}: Carefully designed prompts improve LLM performance in NL parsing and reasoning.
+
+    \begin{tcolorbox}[
+  colback=gray!10,
+  colframe=black,
+  title=Prompt for Converting Natural Language to First-Order Logic (FOL),
+  fonttitle=\bfseries,
+  breakable
+]
+You are a world-class expert in Formal Logic and AI prompt engineering. Your task is to convert natural language premises into consistent First-Order Logic (FOL) formulas. Maintain full consistency between all premises. Use standard FOL symbols: $\land$ for `and', $\lor$ for `or', $\to$ for `implies', $\neg$ for `not', $\forall x$ (e.g., \texttt{ForAll(x, ...)}). Keep the variables meaningful (e.g., use `c' for curriculum, `f' for faculty, etc.). Use standardized predicate names, e.g., \texttt{well\_structured(c)}, \texttt{enhances\_engagement(c)}, \texttt{can\_enroll\_organic\_chemistry(student)}. For universal rules, use $\forall$, \texttt{ForAll(x, ...)} (e.g., keyword `everyone', keyword `If', etc.). For facts, state directly without $\forall$. The question's predicate names must be in premises.
+\end{tcolorbox}
+
+\begin{tcolorbox}[
+  colback=gray!10,
+  colframe=black,
+  title=Prompt for Correcting Parentheses in First-Order Logic (FOL) Statements,
+  fonttitle=\bfseries,
+  breakable
+]
+You are an expert in First-Order Logic (FOL) syntax. Given a list of FOL statements with potentially incorrect or missing parentheses, your task is to fix only the parentheses to make each statement logically correct, without changing any meaning or structure other than fixing brackets. Always ensure that operators (like $\land$, $\lor$, $\to$) are properly enclosed. Then add parentheses where needed to correctly group logical operators ($\land$, $\lor$) and comparison operators ($=$, $\geq$, $\leq$, $>$, $<$).
+\end{tcolorbox}
+    
+    \item \textbf{Few-Shot Learning}: Example-driven context enhances LLM accuracy for FOL conversion and direct solving.
+
+\begin{tcolorbox}[
+  colback=gray!10,
+  colframe=black,
+  title=Few-shot for fixing order of NL and FOL premises
+  fonttitle=\bfseries,
+  breakable
+]
+
+\textbf{Example Input:}
+
+``NL-premises'': [
+    ``Alex has completed safety orientation.'',
+    ``Alex has a membership duration of 8 months.'',
+    ``Alex has paid annual fees on time.'',
+    ``If a person has a valid membership card and has completed safety orientation, they can use equipment.'',
+    ``If a person can use equipment and has a trainer, they can book training.'',
+    ``If a person’s membership duration is at least 6 months, they are eligible for a trainer.'',
+    ``If a person has paid the annual fee, they have a valid membership.''
+],
+
+``FOL-premises'': [
+    ``membership\_duration(Alex) = 8'',
+    ``safety\_orientation(Alex)'',
+    ``ForAll(x, (valid\_membership(x) $\land$ safety\_orientation(x)) $\to$ use\_equipment(x))'',
+    ``paid\_annual\_fee(Alex)'',
+    ``ForAll(x, paid\_annual\_fee(x) $\to$ valid\_membership(x))'',
+    ``ForAll(x, (use\_equipment(x) $\land$ has\_trainer(x)) $\to$ book\_training(x))'',
+    ``ForAll(x, (membership\_duration(x) $\geq$ 6) $\to$ eligible\_trainer(x))'',
+]
+
+\textbf{Example Output:}
+
+[(0,1), (1,0), (2,3), (3,2), (4,5), (5,6), (6,4)]
+
+\end{tcolorbox}
+    
+    \item \textbf{Asynchronous Processing}: FastAPI sub-servers handle tasks concurrently, with \texttt{asyncio} managing request distribution.
+    \item \textbf{Timeout Handling}: Robust timeout checks prevent resource exhaustion, with fallback to LLM solving on failure.
+    \item \textbf{Error Handling}: Exceptions trigger LLM-based solving, ensuring system reliability.
+\end{itemize}
+
+\section{Converting FOL string into Polish notation}
+
+\subsection{Expression Structure and Operator Hierarchy}
+Logical expressions consist of atomic units (variables, constants, and function terms) combined using logical operators. Common operators include:
+\begin{itemize}
+    \item Negation ($\neg$)
+    \item Conjunction ($\land$)
+    \item Disjunction ($\lor$)
+    \item Implication ($\rightarrow$)
+    \item Bi-implication ($\leftrightarrow$)
+\end{itemize}
+
+These operators follow a precedence hierarchy, typically:
+\[
+\neg > \land > \lor > \rightarrow = \leftrightarrow
+\]
+To accurately convert expressions, this hierarchy must be respected, ensuring that higher-precedence operations are applied before lower-precedence ones, unless overridden by parentheses.
+
+\subsection{Recursive Parsing and Polish Notation}
+The transformation process begins by decomposing the expression using recursive descent parsing. This method evaluates the structure of the expression by:
+\begin{enumerate}
+    \item Recognizing subexpressions enclosed in parentheses,
+    \item Recursively processing each subexpression,
+    \item Applying the correct precedence rules at each level,
+    \item Converting subtrees of the expression into prefix form.
+\end{enumerate}
+
+Each operation becomes the root of a subtree in a conceptual parse tree, and operands become its children. In prefix notation, the operator appears before its operands, following the order dictated by the parse tree.
+
+For example, the expression:
+\[
+A \land (B \lor \neg C)
+\]
+is converted into:
+\[
+\land \; A \; \lor \; B \; \neg \; C
+\]
+
+\subsection{Handling Variables, Constants, and Functions}
+In practical logical formulas, elements can be:
+\begin{itemize}
+    \item \textbf{Variables:} Symbols like $A$, $x$, or $y$ representing logical atoms or domain elements.
+    \item \textbf{Constants:} Logical constants such as \texttt{True} or \texttt{False}.
+    \item \textbf{Function Symbols:} Symbols like $P(x)$ or $f(x, y)$ representing propositional or first-order predicates.
+\end{itemize}
+
+Accurate transformation requires distinguishing between these categories, particularly function applications, which may appear syntactically similar to parentheses used for grouping. This is typically achieved through lexical pattern recognition and context-sensitive parsing strategies.
+
+\subsection{Regular Expressions and Lexical Analysis}
+To tokenize the expression—splitting it into operators, variables, constants, and delimiters—regular expressions are employed. The use of regular expressions facilitates:
+\begin{itemize}
+    \item Efficient identification of valid symbols and operators,
+    \item Detection of nested or grouped expressions,
+    \item Preprocessing to remove whitespace and standardize formatting.
+\end{itemize}
+
+Tokenization serves as the first step before recursive evaluation, enabling syntactic clarity and error detection.
+
+\section{Integration with Z3 Solver}
+Once the logical expression is transformed into Polish Notation, it becomes significantly easier to map it to data structures compatible with the Z3 solver. Z3 expects expressions to be constructed programmatically using function calls that mirror logical operations (e.g., \texttt{And}, \texttt{Or}, \texttt{Implies}).
+
+Each operator in the prefix expression corresponds to a constructor function in Z3’s API. By evaluating the prefix structure recursively, one can instantiate Z3 expressions in a consistent and type-safe manner. Variables and function symbols must also be declared appropriately in the Z3 environment.
+
+
+\end{document}
