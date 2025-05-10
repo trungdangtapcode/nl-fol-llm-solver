@@ -79,7 +79,11 @@ uvicorn async_main:app --host 0.0.0.0 --port 80 --reload
   {"url": "http://127.0.0.1:85/query"},
   {"url": "http://127.0.0.1:86/query"},
   {"url": "http://127.0.0.1:87/query"},
-  {"url": "http://127.0.0.1:88/query"}
+  {"url": "http://127.0.0.1:88/query"},
+  {"url": "http://127.0.0.1:89/query"},
+  {"url": "http://127.0.0.1:90/query"},
+  {"url": "http://127.0.0.1:91/query"},
+  {"url": "http://127.0.0.1:92/query"}
 ]
 ```
 
