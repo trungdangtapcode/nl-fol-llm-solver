@@ -5,7 +5,7 @@ This API evaluates logical reasoning questions based on provided premises in nat
 ## API Endpoint
 
 **Method**: POST  
-**URL**: `/evaluate`
+**URL**: `/querym` (or `query` for single question)
 
 ## Request Format
 
