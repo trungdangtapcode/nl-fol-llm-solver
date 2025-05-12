@@ -1,4 +1,5 @@
 clients.json
+clients*.json
 nodes.json
 __pycache__/
 .env

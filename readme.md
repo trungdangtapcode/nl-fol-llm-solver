@@ -182,6 +182,8 @@ uvicorn async_main:app --host 0.0.0.0 --port 80 --reload
 2. Select `Run Task...`
 3. Choose `Stop uvicorn server`
 
+This configuration works with 10 requests at a time. In `clients.json`, we have 28 APIs: (6 of mine + 7 additional) × (1 normal model + 1 smaller model).
+
 ## Ngrok Integration
 ```bash
 ngrok tunnel --label edge=<your_edge> http://localhost:80

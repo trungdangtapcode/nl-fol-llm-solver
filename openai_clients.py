@@ -1,3 +1,4 @@
+import random
 from openai import OpenAI
 import json
 
@@ -20,8 +21,10 @@ def load_clients():
             clients.append(openai_client)
             model_names.append(model)
     global client, model_name
-    client = clients[0]
-    model_name = model_names[0]
+    start_idx = random.randint(0, len(clients)-1)
+    client = clients[start_idx]
+    model_name = model_names[start_idx]
+    client_idx = start_idx
 
 def step_change_client():
     global clients, model_names, client, model_name, client_idx

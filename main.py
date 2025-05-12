@@ -1,3 +1,4 @@
+import random
 from typing import Union
 
 from fastapi import FastAPI, HTTPException, Header
@@ -16,6 +17,7 @@ config = dotenv_values(".env")
 app = FastAPI()
 API_AUTH_TOKEN = config["API_AUTH_TOKEN"]
 TIMEOUT_LIMIT = config["TIMEOUT_LIMIT"]
+RANDOM_MAIN_SLEEP = float(config["RANDOM_MAIN_SLEEP"])
 
 class QueryRequest(BaseModel):
     premises: List[str] = Field(..., alias="premises-NL")
@@ -98,6 +100,9 @@ async def query(request: QueryRequest, authorization: Optional[str] = Header(Non
     if API_AUTH_TOKEN!="-1" and authorization != f"Bearer {API_AUTH_TOKEN}":
         raise HTTPException(status_code=401, detail="Unauthorized. Invalid or missing token.")
     start_time = get_current_time()
+    # delay for 1 second
+    await asyncio.sleep(random.uniform(0, RANDOM_MAIN_SLEEP))
+
     # test()
     NOTHING_RETURN = {
         "answers": ["Nothing"],

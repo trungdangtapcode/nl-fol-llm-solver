@@ -103,7 +103,7 @@ async def main_solving(inputs, start_time):
     return responses
 
 
-@app.post("/query", response_model=QueryResponseItem)
+@app.post("/querym", response_model=QueryResponseItem)
 async def query(request: QueryRequest, authorization: Optional[str] = Header(None)):
     if API_AUTH_TOKEN!="-1" and authorization != f"Bearer {API_AUTH_TOKEN}":
         raise HTTPException(status_code=401, detail="Unauthorized. Invalid or missing token.")
@@ -122,6 +122,41 @@ async def query(request: QueryRequest, authorization: Optional[str] = Header(Non
 			"questions": request.questions
 		}
         result = await main_solving(inputs, start_time)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class QueryRequestN(BaseModel):
+    premises: List[str] = Field(..., alias="premises-NL")
+    questions: str
+
+class QueryResponseItemN(BaseModel):
+    answers: str
+    idx: List[int]
+    explanation: str
+@app.post("/query", response_model=QueryResponseItemN)
+async def query(request: QueryRequestN, authorization: Optional[str] = Header(None)):
+    if API_AUTH_TOKEN!="-1" and authorization != f"Bearer {API_AUTH_TOKEN}":
+        raise HTTPException(status_code=401, detail="Unauthorized. Invalid or missing token.")
+    start_time = get_current_time()
+    # test()
+    NOTHING_RETURN = {
+        "answers": ["Nothing"],
+        "idx": [],
+        "explanation": ["Nothing"]
+    }
+    # return NOTHING_RETURN
+
+    try:
+        inputs = {
+			"premises-NL": request.premises,
+			"questions": [request.questions]
+		}
+        result = await main_solving(inputs, start_time)
+        result["answers"] = result["answers"][0]
+        result["idx"] = result["idx"][0]
+        result["explanation"] = result["explanation"][0]
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
