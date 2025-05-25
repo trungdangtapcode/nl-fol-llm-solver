@@ -135,11 +135,20 @@ class QueryResponseItemN(BaseModel):
     answers: str
     idx: List[int]
     explanation: str
+
+import os
+LOG_DIR = "logs"
+os.makedirs(LOG_DIR, exist_ok=True)
+from datetime import datetime
 @app.post("/query", response_model=QueryResponseItemN)
 async def query(request: QueryRequestN, authorization: Optional[str] = Header(None)):
     if API_AUTH_TOKEN!="-1" and authorization != f"Bearer {API_AUTH_TOKEN}":
         raise HTTPException(status_code=401, detail="Unauthorized. Invalid or missing token.")
     start_time = get_current_time()
+    log_filename = f"{LOG_DIR}/query_{datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')}.json"
+    with open(log_filename, "w") as f:
+        json.dump(request.dict(), f, indent=4)
+
     # test()
     NOTHING_RETURN = {
         "answers": ["Nothing"],

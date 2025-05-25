@@ -3,6 +3,7 @@ import json
 import json
 import re
 from openai_clients import *
+from test.use_retrieval import get_closest_strings
 from timeout import *
 
 def to_json(content):
@@ -24,7 +25,7 @@ def solve_fol_problem_fullLM(premises_nl, question, start_time):
     response = solve_fol_problem_(body, start_time)
     return response 
 
-def solve_fol_problem_(input_data, start_time, model=model_name, temperature=0.0):
+def solve_fol_problem_(input_data, start_time, model=model_name, temperature=0.0, useRetrieval=True):
     """
     Solve FOL natural language problems with advanced reasoning.
     """
@@ -32,7 +33,7 @@ def solve_fol_problem_(input_data, start_time, model=model_name, temperature=0.0
     questions = input_data["questions"]
 
     system_prompt = (
-        "You are a world-class logician and AI researcher. "
+        "You are a world-class logician and AI researcher.\n"
         "Instructions:\n"
         "- Read the premises and the question carefully.\n"
         "- Identify the type of question automatically (Yes/No/Uncertain, number, or multiple-choice, etc.).\n"
@@ -117,6 +118,15 @@ Output:
 
 
 """
+    if (useRetrieval):
+        tmp = get_closest_strings(json.dumps(input_data), 3)
+        if (len(tmp) > 0):
+            BONUS_STRING = "THIS IS SOME DATASET RELATED TO (YOU CAN USE IS ANSWER TOO):\n"
+            for idx, string in enumerate(tmp):
+                BONUS_STRING += f"DATA {idx+1}: "
+                BONUS_STRING += string + "\n"
+            
+            examples = BONUS_STRING + examples
 
     def build_prompt(premises, question, start_time):
         formatted_premises = "\n".join([f"{i+1}. {p}" for i, p in enumerate(premises)])
